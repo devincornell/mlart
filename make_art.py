@@ -40,12 +40,12 @@ def convert_to_name(text: str):
 if __name__ == '__main__':
 
     prompts = [
-        'culture and algorithms',
-        'man walking down a street',
-        'woman walking down a street',
-        'man walking down a city street',
-        'woman walking down a city street',
-        #'water, sanitation, and hygene',
+        #'culture and algorithms',
+        #'man walking down a street',
+        #'woman walking down a street',
+        #'man walking down a city street',
+        #'woman walking down a city street',
+        'water, sanitation, and hygene',
         #'baby drinking water',
         #'white baby drinking water',
         #'black baby drinking water',
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     ]
 
     post_prompts = [
-        ('', ''),
+        #('', ''),
         ('deviantart', ', Deviantart'),
         ('artstation', ', Artstation'),
         ('vray', ', vray'),
@@ -69,6 +69,7 @@ if __name__ == '__main__':
     #for prompt in path_prompts:
     #    print(f'{prompt}: {convert_to_name(prompt)}')
     #exit()
+    folder = f'wash_course_images3'
 
     from itertools import product
     #full_paths = path_prompts.copy()
@@ -82,9 +83,12 @@ if __name__ == '__main__':
 
     # start the main loop
     for prompt, (post_name, post_text), seed in product(prompts, post_prompts, seeds):
-        
+
+        prompt_full = f'{prompt}{post_text}'
         prompt_name = f'{convert_to_name(prompt)}_{post_name}_{seed}'
-        results_folder = f'gender_images/{prompt_name}/'
+        results_folder = f'{folder}/{prompt_name}/'
+
+        print(f'starting prompt: {prompt_full} ({prompt_name})')
         
         try:
             os.mkdir(results_folder)
@@ -93,7 +97,7 @@ if __name__ == '__main__':
 
 
         args = argparse.Namespace(
-            prompts = [prompt],
+            prompts = [prompt_full],
             
             image_prompts=[],
             noise_prompt_seeds=[],
