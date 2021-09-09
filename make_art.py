@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import sys
 from typing import Any
+import string
 
 sys.path.append('./taming-transformers')
 
@@ -28,76 +29,63 @@ from vqgan_clip_zquantize import *
 
 base_path = 'vqgan_clip_zquantize/'
 
+
+def convert_to_name(text: str):
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    text = '_'.join(text.split())
+    text = text.replace('__', '_')
+    return text
+
+
 if __name__ == '__main__':
 
-    path_prompts = [
-        #'Use computational methods to study cultural processes through which organizations produce and are shaped by meaning'
-        #Apply human-centered design and systems thinking in the rural South in pursuit of truth, justice, and equity, unreal engine
-        #Accomplished designer of experiments and principle resource on experimental best-practices
-        #('results/sujaya_hobbies', 'My hobbies include dancing, acting, painting, hiking.'),
-        #('results/castle_unreal', 'Castle on a hill in the stormy sea, unreal engine.'),
-
-        #('zelda_ocarina', 'zelda in the forest playing an ocarina'),
-        #('zelda_ocarina_unreal', 'zelda in the forest playing an ocarina | unreal engine'),
-        #('babes', 'hot babe wearing a bikini'),
-        #('babes_unreal', 'hot babe wearing a bikini | unreal engine'),
-        #('castle_storm', 'Castle in the stormy sea.'),
-        #('castle_storm_unreal', 'Castle in the stormy sea, unreal engine'),
-        #('castle_sky', 'Castle in the Sky'),
-        #('castle_sky_unreal', 'Castle in the Sky, unreal engine'),
-        #('neopet_picknick', 'Neopet Picnic'),
-        #('children_of_time_1', 'the messenger is trying to help them, but its people are unworthy, so preaches the Temple - why else would they fail their God so often? They must improve and become what god has planned for them, but their manner of life and building and invention is wholly at odds with the vission that the messenger relates to them'),
-
-        #('evan_miles', 'miles davis and herbie hancock play ghetto music'),
-        #('evan_transpose', 'transpose your thoughts into another axis of evil'),
-        #('evan_trumpets', 'trumpets are the devil\'s instrument'),
-
-        #('hungry_shark', 'Hungry and Angry Shark'),
-        #('wild_animal', 'Wild Wolf Eating a Rabbit'),
-        #('essence_soul', 'The Essence of the Human Soul'),
-        #('house_red', 'red house on a hill overlooking a green field in the night time'),
-        #('house_green', 'green house on a hill overlooking a green field in the night time'),
-        #('house_pink', 'pink house on a hill overlooking a green field in the night time'),
-        #('house_orange', 'orange house on a hill overlooking a green field in the night time'),
-        #('house_purple', 'purple house on a hill overlooking a green field in the night time'),
-        #('house_blue', 'blue house on a hill overlooking a green field in the night time'),
-        #('house_yellow', 'yellow house on a hill overlooking a green field in the night time'),
-        
-        #('bright_fire', 'Bright Fire in the Dark on a Snowy Mountain'),
-        #('campfire', 'campfire in the dark on a snowy mountain overlooking a green field'),
-        #('knight', 'knight with a sword'),
-        
-        #('landscape_night_storm', 'view from the top of a mountains where you can see a lights below at night'),
-        
-        ('culture_algorithms', 'culture and algorithms'),
-        ('culture_code', 'culture and code'),
-        ('culture_morality', 'culture and morality'),
-        ('water_bottle', 'water bottle'),
-        ('water_bottle_ocean', 'water bottle in the ocean'),
-        ('water_bottle_sea', 'water bottle in the sea'),
+    prompts = [
+        'culture and algorithms',
+        'man walking down a street',
+        'woman walking down a street',
+        'man walking down a city street',
+        'woman walking down a city street',
+        #'water, sanitation, and hygene',
+        #'baby drinking water',
+        #'white baby drinking water',
+        #'black baby drinking water',
+        #'woman drinking water',
+        #'man drinking water',
+        #'white child drinking water',
+        #'black child drinking water',
+        #'water bottle',
+        #'water bottle trash',
     ]
 
-    post_scripts = [
+    post_prompts = [
         ('', ''),
-        ('unreal', ', rendered by Unreal Engine'),
         ('deviantart', ', Deviantart'),
         ('artstation', ', Artstation'),
         ('vray', ', vray'),
-        ('ghibli', ', style of Studio Ghibli'),
-        ('painting', ', painted'),
+        ('ghibli', ', in the style of Studio Ghibli'),
+        #('unreal', ', rendered by Unreal Engine'),
     ]
 
+    #for prompt in path_prompts:
+    #    print(f'{prompt}: {convert_to_name(prompt)}')
+    #exit()
+
     from itertools import product
-    full_paths = path_prompts.copy()
-    seeds = list(range(3))
+    #full_paths = path_prompts.copy()
+    seeds = list(range(5))
+
     #full_paths = [(*p, 0) for p in full_paths]
-    full_paths = [(f'{n}_{sn}_{seed}',f'{d}{sd}', seed) for (n,d),(sn,sd), seed in product(path_prompts, post_scripts, seeds)]
-    print(full_paths[-1])
+    #prompt_params = [(prompt, post, )]
+
+    #full_paths = [(f'{n}_{sn}_{seed}',f'{d}{sd}', seed) for (n,d),(sn,sd), seed in product(path_prompts, post_scripts, seeds)]
+    #print(full_paths[-1])
 
     # start the main loop
-    for name, prompt, seed in full_paths:
+    for prompt, (post_name, post_text), seed in product(prompts, post_prompts, seeds):
         
-        results_folder = f'wash_course_images/{name}/'
+        prompt_name = f'{convert_to_name(prompt)}_{post_name}_{seed}'
+        results_folder = f'gender_images/{prompt_name}/'
+        
         try:
             os.mkdir(results_folder)
         except:
@@ -105,16 +93,12 @@ if __name__ == '__main__':
 
 
         args = argparse.Namespace(
-            #prompts=['Use computational methods to study cultural processes through which organizations produce and are shaped by meaning'],
-            #prompts = ['Apply human-centered design and systems thinking in the rural South in pursuit of truth, justice, and equity, unreal engine'],
-            #prompts = ['Accomplished designer of experiments and principle resource on experimental best-practices'],
-            #prompts = ['Castle on a hill in the stormy sea, unreal engine'],
             prompts = [prompt],
             
             image_prompts=[],
             noise_prompt_seeds=[],
             noise_prompt_weights=[],
-            size=[400, 400],
+            size=[600, 400],
             init_image=None,
             init_weight=0.,
             clip_model='ViT-B/32',
@@ -186,7 +170,7 @@ if __name__ == '__main__':
         @torch.no_grad()
         def checkin(i, losses):
             out = synth(z)
-            fname = f'{results_folder}/{name}_{i}.png'
+            fname = f'{results_folder}/{prompt_name}_iter{i}.png'
             TF.to_pil_image(out[0].cpu()).save(fname)
             #display.display(display.Image(fname))
 
@@ -224,7 +208,7 @@ if __name__ == '__main__':
                 self.prev_losses.append(loss.item())
                 if self.i % self.display_freq == 0:
                     losses_str = ', '.join(f'{loss.item():g}' for loss in self.lossAll)
-                    tqdm.write(f'{name}: i={self.i}, loss={sum(self.lossAll).item():g}, losses={losses_str}')
+                    tqdm.write(f'{prompt_name}: i={self.i}, loss={sum(self.lossAll).item():g}, losses={losses_str}')
                 
                 if self.i % self.save_freq == 0:
                     checkin(self.i, self.lossAll)
