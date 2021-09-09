@@ -40,12 +40,13 @@ def convert_to_name(text: str):
 if __name__ == '__main__':
 
     prompts = [
-        #'culture and algorithms',
+        
         #'man walking down a street',
         #'woman walking down a street',
         #'man walking down a city street',
         #'woman walking down a city street',
         'water, sanitation, and hygene',
+        'culture and algorithms',
         #'baby drinking water',
         #'white baby drinking water',
         #'black baby drinking water',
