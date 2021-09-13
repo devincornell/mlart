@@ -27,8 +27,6 @@ from torchvision.transforms import functional as TF
 from tqdm.notebook import tqdm
 from vqgan_clip_zquantize import *
 
-base_path = 'vqgan_clip_zquantize/'
-
 
 def convert_to_name(text: str):
     text = text.translate(str.maketrans('', '', string.punctuation))
@@ -40,37 +38,64 @@ def convert_to_name(text: str):
 if __name__ == '__main__':
 
     prompts = [
-        
-        #'man walking down a street',
-        #'woman walking down a street',
-        #'man walking down a city street',
-        #'woman walking down a city street',
-        'water, sanitation, and hygene',
-        'culture and algorithms',
-        #'baby drinking water',
-        #'white baby drinking water',
-        #'black baby drinking water',
-        #'woman drinking water',
-        #'man drinking water',
-        #'white child drinking water',
-        #'black child drinking water',
-        #'water bottle',
-        #'water bottle trash',
+        #'culture and algorithms',
+        #'building on a cliff in the night with a fire',
+        #'perston standing on a cliff in the night with a fire',
+        #'knight in shining armor',
+        #'computer code in the matrix',
+        #'disturbed man shakes the chains',
+        #'metal chain hanging',
+        #'metal chain hanging in darkness',
+        #'fear, love, hate, anger, peace, hapiness, sadness, joy, excitement',
+        #'glass of beer',
+        #'dollar bills money',
+        #'lust sex steamy love',
+        #'vichitra loves beer',
+        'flower power',
+        'love, happiness, peace, flowers',
+        'building at sunset',
+        'athlete',
+        'athlete on a field',
+        'college university',
+        'new york city skyline',
+        'twin towers new york city',
+        'twin towers',
+        'Christian Christianity',
+        'Jewish',
+        'Orthodox Jewish',
+        'Women, fire, and dangerous things',
+        'metaphors of love',
+        'metaphors of sadness',
+        'sociology, anthropology, psychology',
+        'life',
+        'nice natural park landscape',
+        'park landscape',
+        'Angel\'s Landing',
+        'Half Dome Yosemite',
+        'scuba diving',
+        'orcas',
+        'dolphins',
+        'orcas and dolphins',
+        'Chicago',
+        'Seattle',
+        'Duke University',
     ]
 
     post_prompts = [
-        #('', ''),
-        ('deviantart', ', Deviantart'),
-        ('artstation', ', Artstation'),
-        ('vray', ', vray'),
-        ('ghibli', ', in the style of Studio Ghibli'),
+        ('', ''),
+        ('flickr', ' from Flickr'),
+        ('deviantart', ' from Deviantart'),
+        ('artstation', ' from Artstation'),
+        ('vray', ' from vray'),
+        ('ghibli', ' in the style of Studio Ghibli'),
         #('unreal', ', rendered by Unreal Engine'),
     ]
 
     #for prompt in path_prompts:
     #    print(f'{prompt}: {convert_to_name(prompt)}')
     #exit()
-    folder = f'wash_course_images3'
+    folder = f'random_phrases_2'
+    final_image_folder = 'final_images'
 
     from itertools import product
     #full_paths = path_prompts.copy()
@@ -88,14 +113,19 @@ if __name__ == '__main__':
         prompt_full = f'{prompt}{post_text}'
         prompt_name = f'{convert_to_name(prompt)}_{post_name}_{seed}'
         results_folder = f'{folder}/{prompt_name}/'
+        final_results_folder = f'final_images/'
 
         print(f'starting prompt: {prompt_full} ({prompt_name})')
+        
+        try:
+            os.mkdir(final_results_folder)
+        except:
+            pass
         
         try:
             os.mkdir(results_folder)
         except:
             pass
-
 
         args = argparse.Namespace(
             prompts = [prompt_full],
@@ -173,9 +203,9 @@ if __name__ == '__main__':
             return clamp_with_grad(model.decode(z_q).add(1).div(2), 0, 1)
 
         @torch.no_grad()
-        def checkin(i, losses):
+        def checkin(i, losses, folder):
             out = synth(z)
-            fname = f'{results_folder}/{prompt_name}_iter{i}.png'
+            fname = f'{folder}/{prompt_name}_iter{i}.png'
             TF.to_pil_image(out[0].cpu()).save(fname)
             #display.display(display.Image(fname))
 
@@ -216,7 +246,7 @@ if __name__ == '__main__':
                     tqdm.write(f'{prompt_name}: i={self.i}, loss={sum(self.lossAll).item():g}, losses={losses_str}')
                 
                 if self.i % self.save_freq == 0:
-                    checkin(self.i, self.lossAll)
+                    checkin(self.i, self.lossAll, results_folder)
                 
                 loss.backward()
                 self.opt.step()
@@ -230,7 +260,7 @@ if __name__ == '__main__':
                 if len(self.prev_losses) > 5:
                     if len([i for i in range(len(ls)-1) if (ls[i+1]-ls[i])>thresh]) > quit_after:
                         #if self.prev_losses[-1] - self.prev_losses[-2] > 0.01:
-                        checkin(self.i, self.lossAll)
+                        checkin(self.i, self.lossAll, final_results_folder)
                         return True
                 False
 
