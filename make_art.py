@@ -51,8 +51,8 @@ if __name__ == '__main__':
         #'dollar bills money',
         #'lust sex steamy love',
         #'vichitra loves beer',
-        'flower power',
-        'love, happiness, peace, flowers',
+        #'flower power',
+        #'love, happiness, peace, flowers',
         'building at sunset',
         'athlete',
         'athlete on a field',
@@ -94,8 +94,8 @@ if __name__ == '__main__':
     #for prompt in path_prompts:
     #    print(f'{prompt}: {convert_to_name(prompt)}')
     #exit()
-    folder = f'random_phrases_2'
-    final_image_folder = 'final_images'
+    folder = f'gods'
+    final_image_folder = 'final_images_gods'
 
     from itertools import product
     #full_paths = path_prompts.copy()
