@@ -38,47 +38,34 @@ def convert_to_name(text: str):
 if __name__ == '__main__':
 
     prompts = [
+        'star wars',
+        'lightsaber luke skywalker',
+        'space ship with aliens',
+        'desert sun',
+        'black sky with stars',
+        'black sky city',
+        'captain america',
+        'flying in the clouds',
+        'airplane in the clouds',
+        'bird in the sky',
+        'birds flying through clouds in the sky',
+        'thor god of thunder',
+        'thor hammer thunder',
+        'loki god of mischief',
+        'Thor Norse mythology',
+        'Loki Norse Mythology',
+        
+        #'love hapiness',
+        #'peace love',
         #'culture and algorithms',
-        #'building on a cliff in the night with a fire',
-        #'perston standing on a cliff in the night with a fire',
-        #'knight in shining armor',
-        #'computer code in the matrix',
-        #'disturbed man shakes the chains',
-        #'metal chain hanging',
-        #'metal chain hanging in darkness',
-        #'fear, love, hate, anger, peace, hapiness, sadness, joy, excitement',
-        #'glass of beer',
-        #'dollar bills money',
-        #'lust sex steamy love',
-        #'vichitra loves beer',
-        #'flower power',
-        #'love, happiness, peace, flowers',
-        'building at sunset',
-        'athlete',
-        'athlete on a field',
-        'college university',
-        'new york city skyline',
-        'twin towers new york city',
-        'twin towers',
-        'Christian Christianity',
-        'Jewish',
-        'Orthodox Jewish',
-        'Women, fire, and dangerous things',
-        'metaphors of love',
-        'metaphors of sadness',
-        'sociology, anthropology, psychology',
-        'life',
-        'nice natural park landscape',
-        'park landscape',
-        'Angel\'s Landing',
-        'Half Dome Yosemite',
-        'scuba diving',
-        'orcas',
-        'dolphins',
-        'orcas and dolphins',
-        'Chicago',
-        'Seattle',
-        'Duke University',
+        #'Hogwarts School of Witchcraft and Wizardry',
+        #'Duke University',
+        #'Stanford University',
+        #'Harvard University',
+        #'Marvel Comics',
+        #'Spiderman comics',
+        #'Spiderman cartoons',
+        #'Captain America',
     ]
 
     post_prompts = [
@@ -88,14 +75,14 @@ if __name__ == '__main__':
         ('artstation', ' from Artstation'),
         ('vray', ' from vray'),
         ('ghibli', ' in the style of Studio Ghibli'),
-        #('unreal', ', rendered by Unreal Engine'),
+        ('unreal', ', rendered by Unreal Engine'),
     ]
 
     #for prompt in path_prompts:
     #    print(f'{prompt}: {convert_to_name(prompt)}')
     #exit()
-    folder = f'gods'
-    final_image_folder = 'final_images_gods'
+    folder = f'heroes'
+    final_results_folder = f'heroes_final/'
 
     from itertools import product
     #full_paths = path_prompts.copy()
@@ -113,7 +100,6 @@ if __name__ == '__main__':
         prompt_full = f'{prompt}{post_text}'
         prompt_name = f'{convert_to_name(prompt)}_{post_name}_{seed}'
         results_folder = f'{folder}/{prompt_name}/'
-        final_results_folder = f'final_images/'
 
         print(f'starting prompt: {prompt_full} ({prompt_name})')
         
@@ -133,8 +119,9 @@ if __name__ == '__main__':
             image_prompts=[],
             noise_prompt_seeds=[],
             noise_prompt_weights=[],
-            size=[600, 400],
-            init_image=None,
+            size=[400, 600],
+            #init_image=None,
+            init_image='start_images/snowy_mountain_forest.png',
             init_weight=0.,
             clip_model='ViT-B/32',
             vqgan_config='vqgan_clip_zquantize/vqgan_imagenet_f16_1024.yaml',
@@ -233,7 +220,7 @@ if __name__ == '__main__':
             i: int = 0
             prev_losses: Any = dataclasses.field(default_factory=list)
             display_freq: int = 1
-            save_freq: int = 100
+            save_freq: int = 10
 
             def train(self):
                 self.opt.zero_grad()
