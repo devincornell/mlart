@@ -25,7 +25,9 @@ from torch.nn import functional as F
 from torchvision import transforms
 from torchvision.transforms import functional as TF
 from tqdm.notebook import tqdm
+
 import vqgan_clip_zquantize
+import vqganclip
 #from vqgan_clip_zquantize import *
 
 
@@ -36,6 +38,7 @@ def convert_to_name(text: str):
     text = '_'.join(text.split())
     text = text.replace('__', '_')
     return text
+
 
 
 if __name__ == '__main__':
@@ -87,9 +90,7 @@ if __name__ == '__main__':
     #for prompt in path_prompts:
     #    print(f'{prompt}: {convert_to_name(prompt)}')
     #exit()
-    run_name = 'heroes'
-    folder = f'images/intermediate_images/{run_name}/'
-    final_results_folder = f'images/final_images/final_{run_name}/'
+    
 
     from itertools import product
     #full_paths = path_prompts.copy()
@@ -105,21 +106,7 @@ if __name__ == '__main__':
     for prompt, (post_name, post_text), seed in product(prompts, post_prompts, seeds):
 
         prompt_full = f'{prompt}{post_text}'
-        prompt_name = f'{convert_to_name(prompt)}_{post_name}_{seed}'
-        results_folder = f'{folder}/{prompt_name}/'
-
-        print(f'starting prompt: {prompt_full} ({prompt_name})')
         
-        try:
-            os.mkdir(final_results_folder)
-        except:
-            pass
-        
-        try:
-            os.mkdir(results_folder)
-        except:
-            pass
-
         args = argparse.Namespace(
             prompts = [prompt_full],
             
@@ -175,11 +162,13 @@ if __name__ == '__main__':
 
         pMs = []
 
+        # add text prompts
         for prompt in args.prompts:
             txt, weight, stop = vqgan_clip_zquantize.parse_prompt(prompt)
             embed = perceptor.encode_text(vqgan_clip_zquantize.clip.tokenize(txt).to(device)).float()
             pMs.append(vqgan_clip_zquantize.Prompt(embed, weight, stop).to(device))
 
+        # add image prompts
         for prompt in args.image_prompts:
             path, weight, stop = vqgan_clip_zquantize.parse_prompt(prompt)
             img = vqgan_clip_zquantize.resize_image(Image.open(vqgan_clip_zquantize.fetch(path)).convert('RGB'), (sideX, sideY))
@@ -187,85 +176,54 @@ if __name__ == '__main__':
             embed = perceptor.encode_image(normalize(batch)).float()
             pMs.append(vqgan_clip_zquantize.Prompt(embed, weight, stop).to(device))
 
+        # add noise prompts
         for seed, weight in zip(args.noise_prompt_seeds, args.noise_prompt_weights):
             gen = torch.Generator().manual_seed(seed)
             embed = torch.empty([1, perceptor.visual.output_dim]).normal_(generator=gen)
             pMs.append(vqgan_clip_zquantize.Prompt(embed, weight).to(device))
 
-        def synth(z):
-            z_q = vqgan_clip_zquantize.vector_quantize(z.movedim(1, 3), model.quantize.embedding.weight).movedim(3, 1)
-            return vqgan_clip_zquantize.clamp_with_grad(model.decode(z_q).add(1).div(2), 0, 1)
 
-        @torch.no_grad()
-        def checkin(i, losses, folder):
-            out = synth(z)
-            fname = f'{folder}/{prompt_name}_iter{i}.png'
-            TF.to_pil_image(out[0].cpu()).save(fname)
-            #display.display(display.Image(fname))
+        display_freq = 10
+        save_freq = 10
+        run_name = 'heroes'
+        training_folder = f'images/training/{run_name}/'
+        final_results_folder = f'images/final/final_{run_name}/'
+        
+        try:
+            os.mkdir(training_folder)
+        except:
+            pass
+        
+        try:
+            os.mkdir(final_results_folder)
+        except:
+            pass
 
-        def ascend_txt():
-            out = synth(z)
-            iii = perceptor.encode_image(normalize(make_cutouts(out))).float()
+        prompt_name = f'{convert_to_name(prompt)}_{post_name}_{seed}'
+        results_folder = f'{folder}/{prompt_name}/'
 
-            result = []
+        print(f'starting prompt: {prompt_full} ({prompt_name})')
 
-            if args.init_weight:
-                result.append(F.mse_loss(z, z_orig) * args.init_weight / 2)
 
-            for prompt in pMs:
-                result.append(prompt(iii))
-
-            return result
-
-        @dataclasses.dataclass
-        class Trainer:
-            args: Any
-            opt: Any
-            z: Any
-            z_min: float
-            z_max: float
-            i: int = 0
-            prev_losses: Any = dataclasses.field(default_factory=list)
-            display_freq: int = 100
-            save_freq: int = 100
-
-            def train(self):
-                self.opt.zero_grad()
-                self.lossAll = ascend_txt()
-                loss = sum(self.lossAll)
-                
-                self.prev_losses.append(loss.item())
-                if self.i % self.display_freq == 0:
-                    losses_str = ', '.join(f'{loss.item():g}' for loss in self.lossAll)
-                    tqdm.write(f'{prompt_name}: i={self.i}, loss={sum(self.lossAll).item():g}, losses={losses_str}')
-                
-                if self.i % self.save_freq == 0:
-                    checkin(self.i, self.lossAll, results_folder)
-                
-                loss.backward()
-                self.opt.step()
-                with torch.no_grad():
-                    self.z.copy_(self.z.maximum(self.z_min).minimum(self.z_max))
-
-                self.i += 1
+        trainer = vqganclip.VQGANCLIP(args, opt, z, z_min, z_max)
+        while True:
+            trainer.epoch()
             
-            def is_converged(self, thresh=0.01, quit_after=10):
-                ls = self.prev_losses
-                if len(self.prev_losses) > 5:
-                    if len([i for i in range(len(ls)-1) if (ls[i+1]-ls[i])>thresh]) > quit_after:
-                        #if self.prev_losses[-1] - self.prev_losses[-2] > 0.01:
-                        checkin(self.i, self.lossAll, final_results_folder)
-                        return True
-                False
+            image_fname = f'{prompt_name}_iter{trainer.i}.png'
 
-        with tqdm() as pbar:
-            trainer = Trainer(args, opt, z, z_min, z_max)
-            while True:
-                trainer.train()
-                if trainer.is_converged():
-                    print('image converged')
-                    break
-                pbar.update()
+            # display output if needed
+            if display_freq is not None and (trainer.i % display_freq == 0):
+                losses_str = ', '.join(f'{loss.item():g}' for loss in trainer.lossAll)
+                tqdm.write(f'{prompt_name}: i={trainer.i}, loss={sum(trainer.lossAll).item():g}, losses={losses_str}')
+            
+            # save image if required
+            if save_freq is not None and (trainer.i % save_freq == 0):
+                trainer.save_current_image(f'{intermediate_folder}/{image_fname}')
+                
+            # check convergence
+            if trainer.is_converged():
+                trainer.save_current_image(f'{final_results_folder}/{image_fname}')
+                break
 
 
 
