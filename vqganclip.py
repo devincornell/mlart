@@ -13,10 +13,8 @@ import vqgan_clip_zquantize
 
 @dataclasses.dataclass
 class VQGANCLIP:
-    args: typing.Any
-
-    prompts: list
-    size: list
+    text_prompts: list # list of text prompts
+    size: list # size of output image
     
     image_prompts: list = dataclasses.field(default_factory=list)
     noise_prompt_seeds: list = dataclasses.field(default_factory=list)
@@ -43,7 +41,6 @@ class VQGANCLIP:
     def __post_init__(self):
 
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        print('Using device:', device)
 
         self.model = vqgan_clip_zquantize.load_vqgan_model(self.vqgan_config, self.vqgan_checkpoint).to(device)
         self.perceptor = vqgan_clip_zquantize.clip.load(self.clip_model, jit=False)[0].eval().requires_grad_(False).to(device)
@@ -73,13 +70,13 @@ class VQGANCLIP:
         self.z.requires_grad_(True)
         self.opt = optim.Adam([self.z], lr=self.step_size)
 
-        normalize = transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
+        self.normalize = transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
                                         std=[0.26862954, 0.26130258, 0.27577711])
 
         self.prompts = []
 
         # add text prompts
-        for prompt in self.prompts:
+        for prompt in self.text_prompts:
             txt, weight, stop = vqgan_clip_zquantize.parse_prompt(prompt)
             embed = self.perceptor.encode_text(vqgan_clip_zquantize.clip.tokenize(txt).to(device)).float()
             self.prompts.append(vqgan_clip_zquantize.Prompt(embed, weight, stop).to(device))
@@ -89,7 +86,7 @@ class VQGANCLIP:
             path, weight, stop = vqgan_clip_zquantize.parse_prompt(prompt)
             img = vqgan_clip_zquantize.resize_image(Image.open(vqgan_clip_zquantize.fetch(path)).convert('RGB'), (sideX, sideY))
             batch = self.make_cutouts(TF.to_tensor(img).unsqueeze(0).to(device))
-            embed = self.perceptor.encode_image(normalize(batch)).float()
+            embed = self.perceptor.encode_image(self.normalize(batch)).float()
             self.prompts.append(vqgan_clip_zquantize.Prompt(embed, weight, stop).to(device))
 
         # add noise prompts
@@ -106,6 +103,7 @@ class VQGANCLIP:
         self.opt.zero_grad()
         self.lossAll = self.ascend_txt()
         loss = sum(self.lossAll)
+        #self.prev_losses.append(loss.item())
         self.prev_losses.append(loss.item())
         
         # backpropogate
@@ -135,7 +133,7 @@ class VQGANCLIP:
 
     def ascend_txt(self):
         out = self.synth(self.z)
-        iii = self.perceptor.encode_image(normalize(self.make_cutouts(out))).float()
+        iii = self.perceptor.encode_image(self.normalize(self.make_cutouts(out))).float()
 
         result = []
 

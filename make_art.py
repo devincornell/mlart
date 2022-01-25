@@ -24,7 +24,8 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torchvision import transforms
 from torchvision.transforms import functional as TF
-from tqdm.notebook import tqdm
+#from tqdm.notebook import tqdm
+import tqdm
 
 import vqgan_clip_zquantize
 import vqganclip
@@ -126,11 +127,13 @@ if __name__ == '__main__':
         #    seed=seed,
         #)
 
-        display_freq = 10
-        save_freq = 10
-        run_name = 'heroes'
-        training_folder = f'images/training/{run_name}/'
+        display_freq = None
+        save_freq = 5
+        run_name = 'tester'
+        training_folder = f'images/training/training_{run_name}/'
         final_results_folder = f'images/final/final_{run_name}/'
+        prompt_name = f'{convert_to_name(prompt)}_{post_name}_{seed}'
+        print(f'starting prompt: {prompt_full} ({prompt_name})')
         
         try:
             os.mkdir(training_folder)
@@ -142,31 +145,32 @@ if __name__ == '__main__':
         except:
             pass
 
-        prompt_name = f'{convert_to_name(prompt)}_{post_name}_{seed}'
-        results_folder = f'{folder}/{prompt_name}/'
-
-        print(f'starting prompt: {prompt_full} ({prompt_name})')
-
         #init_image='start_images/snowy_mountain_forest.png',
-        trainer = vqganclip.VQGANCLIP(args, prompts=[prompt_full], size=[600, 400])
-        while True:
-            trainer.epoch()
-            
-            image_fname = f'{prompt_name}_iter{trainer.i}.png'
+        trainer = vqganclip.VQGANCLIP(
+            text_prompts=[prompt_full],
+            size=[600, 400]
+        )
 
-            # display output if needed
-            if display_freq is not None and (trainer.i % display_freq == 0):
-                losses_str = ', '.join(f'{loss.item():g}' for loss in trainer.lossAll)
-                tqdm.write(f'{prompt_name}: i={trainer.i}, loss={sum(trainer.lossAll).item():g}, losses={losses_str}')
-            
-            # save image if required
-            if save_freq is not None and (trainer.i % save_freq == 0):
-                trainer.save_current_image(f'{intermediate_folder}/{image_fname}')
+        with tqdm.tqdm() as train_progress_bar:
+            while True:
+                trainer.epoch()
+
+                # update progress
+                train_progress_bar.update()
+
+                # display output if needed
+                if display_freq is not None and (trainer.i % display_freq == 0):
+                    losses_str = ', '.join(f'{loss.item():g}' for loss in trainer.lossAll)
+                    tqdm.tqdm.write(f'{prompt_name}: i={trainer.i}, loss={sum(trainer.lossAll).item():g}, losses={losses_str}')
                 
-            # check convergence
-            if trainer.is_converged():
-                trainer.save_current_image(f'{final_results_folder}/{image_fname}')
-                break
+                # save image if required
+                if save_freq is not None and (trainer.i % save_freq == 0):
+                    trainer.save_current_image(f'{training_folder}/{prompt_name}_training.png')
+                    
+                # check convergence
+                if trainer.is_converged():
+                    trainer.save_current_image(f'{final_results_folder}/{prompt_name}_final.png')
+                    break
 
 
 
