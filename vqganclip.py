@@ -28,6 +28,7 @@ class VQGANCLIP:
     cutn: int = 64
     cut_pow: float = 1.
     seed: int = 0
+    device_name: str = 'cuda:0'
 
     # model data paths
     clip_model: str = 'ViT-B/32'
@@ -40,10 +41,10 @@ class VQGANCLIP:
 
     def __post_init__(self):
 
-        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device(self.device_name if torch.cuda.is_available() else 'cpu')
 
-        self.model = vqgan_clip_zquantize.load_vqgan_model(self.vqgan_config, self.vqgan_checkpoint).to(device)
-        self.perceptor = vqgan_clip_zquantize.clip.load(self.clip_model, jit=False)[0].eval().requires_grad_(False).to(device)
+        self.model = vqgan_clip_zquantize.load_vqgan_model(self.vqgan_config, self.vqgan_checkpoint).to(self.device)
+        self.perceptor = vqgan_clip_zquantize.clip.load(self.clip_model, jit=False)[0].eval().requires_grad_(False).to(self.device)
 
         cut_size = self.perceptor.visual.input_resolution
         e_dim = self.model.quantize.e_dim
@@ -52,18 +53,20 @@ class VQGANCLIP:
         n_toks = self.model.quantize.n_e
         toksX, toksY = self.size[0] // f, self.size[1] // f
         sideX, sideY = toksX * f, toksY * f
+        self.side_shape = (sideX, sideY)
         self.z_min = self.model.quantize.embedding.weight.min(dim=0).values[None, :, None, None]
         self.z_max = self.model.quantize.embedding.weight.max(dim=0).values[None, :, None, None]
 
         if self.seed is not None:
             torch.manual_seed(self.seed)
 
+        # initialize image
         if self.init_image:
             pil_image = Image.open(vqgan_clip_zquantize.fetch(self.init_image)).convert('RGB')
-            pil_image = pil_image.resize((sideX, sideY), Image.LANCZOS)
-            self.z, *_ = self.model.encode(TF.to_tensor(pil_image).to(device).unsqueeze(0) * 2 - 1)
+            pil_image = pil_image.resize(self.side_shape, Image.LANCZOS)
+            self.z, *_ = self.model.encode(TF.to_tensor(pil_image).to(self.device).unsqueeze(0) * 2 - 1)
         else:
-            one_hot = F.one_hot(torch.randint(n_toks, [toksY * toksX], device=device), n_toks).float()
+            one_hot = F.one_hot(torch.randint(n_toks, [toksY * toksX], device=self.device), n_toks).float()
             self.z = one_hot @ self.model.quantize.embedding.weight
             self.z = self.z.view([-1, toksY, toksX, e_dim]).permute(0, 3, 1, 2)
         self.z_orig = self.z.clone()
@@ -73,28 +76,41 @@ class VQGANCLIP:
         self.normalize = transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
                                         std=[0.26862954, 0.26130258, 0.27577711])
 
-        self.prompts = []
-
         # add text prompts
-        for prompt in self.text_prompts:
-            txt, weight, stop = vqgan_clip_zquantize.parse_prompt(prompt)
-            embed = self.perceptor.encode_text(vqgan_clip_zquantize.clip.tokenize(txt).to(device)).float()
-            self.prompts.append(vqgan_clip_zquantize.Prompt(embed, weight, stop).to(device))
+        self.set_text_prompts(self.text_prompts)
 
         # add image prompts
-        for prompt in self.image_prompts:
-            path, weight, stop = vqgan_clip_zquantize.parse_prompt(prompt)
-            img = vqgan_clip_zquantize.resize_image(Image.open(vqgan_clip_zquantize.fetch(path)).convert('RGB'), (sideX, sideY))
-            batch = self.make_cutouts(TF.to_tensor(img).unsqueeze(0).to(device))
-            embed = self.perceptor.encode_image(self.normalize(batch)).float()
-            self.prompts.append(vqgan_clip_zquantize.Prompt(embed, weight, stop).to(device))
+        self.set_image_prompts(self.image_prompts)
 
         # add noise prompts
+        self.prompts_noise = list()
         for seed, weight in zip(self.noise_prompt_seeds, self.noise_prompt_weights):
             gen = torch.Generator().manual_seed(seed)
             embed = torch.empty([1, self.perceptor.visual.output_dim]).normal_(generator=gen)
-            self.prompts.append(vqgan_clip_zquantize.Prompt(embed, weight).to(device))
-        
+            self.prompts_noise.append(vqgan_clip_zquantize.Prompt(embed, weight).to(self.device))
+
+    @property
+    def prompts(self):
+        return self.prompts_text + self.prompts_image + self.prompts_noise
+    
+    def set_text_prompts(self, text_prompts: typing.List[typing.List[str]]):
+        '''Set the text prompts as the loss function.
+        '''
+        self.prompts_text = list()
+        for prompt in text_prompts:
+            txt, weight, stop = vqgan_clip_zquantize.parse_prompt(prompt)
+            embed = self.perceptor.encode_text(vqgan_clip_zquantize.clip.tokenize(txt).to(self.device)).float()
+            self.prompts_text.append(vqgan_clip_zquantize.Prompt(embed, weight, stop).to(self.device))
+
+    def set_image_prompts(self, image_prompts: typing.List[str]):
+        self.prompts_image = list()
+        for prompt in image_prompts:
+            path, weight, stop = vqgan_clip_zquantize.parse_prompt(prompt)
+            img = vqgan_clip_zquantize.resize_image(Image.open(vqgan_clip_zquantize.fetch(path)).convert('RGB'), self.side_shape)
+            batch = self.make_cutouts(TF.to_tensor(img).unsqueeze(0).to(self.device))
+            embed = self.perceptor.encode_image(self.normalize(batch)).float()
+            self.prompts_image.append(vqgan_clip_zquantize.Prompt(embed, weight, stop).to(self.device))
+
 
     def epoch(self):
         '''Compute one epoch of training.

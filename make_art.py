@@ -2,7 +2,7 @@
 
 
 
-
+import pathlib
 import argparse
 import dataclasses
 import math
@@ -45,7 +45,7 @@ class Prompt:
 
     @property
     def name(self):
-        text = self.text
+        text = self.base_text
         text = text.translate(str.maketrans('', '', string.punctuation))
         text = '_'.join(text.split())
         text = text.replace('__', '_')
@@ -56,52 +56,29 @@ if __name__ == '__main__':
 
     display_freq = None
     save_freq = 5
-    run_name = 'tester'
-    training_folder = f'images/training/training_{run_name}/'
-    final_results_folder = f'images/final/final_{run_name}/'
+    run_name = 'freedom4'
+    image_path = pathlib.Path(f'images')
+    final_folder = image_path.joinpath(f'final/final_{run_name}/')
+    training_folder = image_path.joinpath(f'training/training_{run_name}/')
+    gif_folder = image_path.joinpath(f'gifs/gifs_{run_name}/')
 
-    try:
-        os.mkdir(training_folder)
-    except:
-        pass
-    
-    try:
-        os.mkdir(final_results_folder)
-    except:
-        pass
+    final_folder.mkdir(parents=True, exist_ok=True)
+    training_folder.mkdir(parents=True, exist_ok=True)
+    gif_folder.mkdir(parents=True, exist_ok=True)
 
     prompt_texts = [
-        'star wars',
-        'lightsaber luke skywalker',
-        'lightsaber on spaceship',
-        'scarlet witch',
-        'batman begins',
-        'batman wearing a cape',
-        'batman and robin',
-        'green lantern',
-        'superman strength',
-        'super hero wearing a cape',
-        'spiderman fighting',
-        'spiderman punching villian',
-        'spiderman swinging on web',
-        'incredible hulk',
-        'super powered lazer',
-        'yoda lightsaber',
-        'captain america',
-        'Captain America',
-        'thor god of thunder',
-        'thor hammer thunder',
-        'loki god of mischief',
-        'Thor Norse mythology',
-        'Loki Norse Mythology',
-        #'black sky with stars',
-        #'black sky city',
-        #'space ship with aliens',
-        #'desert sun',
-        #'flying in the clouds',
-        #'airplane in the clouds',
-        #'bird in the sky',
-        #'birds flying through clouds in the sky',
+        #'freedom',
+        #'american flag freedom',
+        #'struggle for freedom',
+        'power and freedom',
+        'power of freedom',
+        'freedom from power',
+        'freedom is beautiful',
+        #'mountain scene at sunset',
+        #'sunset',
+        #'sunset view from a mountain'
+        #'sunset mountain scene',
+        #'beautiful sunset',
     ]
 
     post_prompts = [
@@ -120,36 +97,31 @@ if __name__ == '__main__':
     prompts = [Prompt(t, pt, pn) for (t, (pn, pt)) in product(prompt_texts, post_prompts)]
     
     # other params
-    seeds = list(range(5))
-
-
-    params = list(product(prompts, seeds))
+    seeds = list(range(3))
+    step_sizes = [0.05, 0.025, 0.01]
+    threshes = [0.01, 0.03, 0.05]
+    params = list(product(step_sizes, threshes, seeds, prompts))
     print(f'running {len(params)} param combinations')
 
 
 
-    # start the main loop
-    
-    for prompt, seed in tqdm.tqdm(params):
+    # start the outer loop
+    for step_size, thresh, seed, prompt in tqdm.tqdm(params):
         
-        base_name = f'{prompt.name}_{seed}'
+        base_name = f'{prompt.name}_step{step_size}_thresh{thresh}_{seed}'
         print(f'{base_name=}')
-
 
         trainer = vqganclip.VQGANCLIP(
             text_prompts=[prompt.text],
-            init_image='images/start_images/mountain_sunset_1.png',
-            size=[600, 400],
+            init_image='images/start_images/kiersten_freedom_painting_cropped.jpeg',
+            size=[400, 600],
             seed=seed,
-            step_size=0.01,
+            step_size=step_size,
+            #device_name='cpu',
         )
 
         with tqdm.tqdm() as train_progress_bar:
             while True:
-                trainer.epoch()
-
-                # update progress
-                train_progress_bar.update()
 
                 # display output if needed
                 if display_freq is not None and (trainer.i % display_freq == 0):
@@ -158,9 +130,16 @@ if __name__ == '__main__':
                 
                 # save image if required
                 if save_freq is not None and (trainer.i % save_freq == 0):
-                    trainer.save_current_image(f'{training_folder}/{base_name}_training.png')
+                    trainer.save_current_image(training_folder.joinpath(f'{base_name}_training.png'))
+                    trainer.save_current_image(gif_folder.joinpath(f'{base_name}_iter{trainer.i:04d}.png'))
+
+                # run epoch
+                trainer.epoch()
                     
                 # check convergence
-                if trainer.is_converged(thresh=0.01, quit_after=5):
-                    trainer.save_current_image(f'{final_results_folder}/{base_name}_final.png')
+                if trainer.is_converged(thresh=thresh, quit_after=5):
+                    trainer.save_current_image(final_folder.joinpath(f'{base_name}_final.png'))
                     break
+
+                # update progress
+                train_progress_bar.update()
