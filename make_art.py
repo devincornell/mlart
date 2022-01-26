@@ -90,11 +90,9 @@ if __name__ == '__main__':
         ('ghibli', 'in the style of Studio Ghibli'),
         ('unreal', 'rendered by Unreal Engine'),
     ]
-    
-    
 
     # generate prompts
-    prompts = [Prompt(t, pt, pn) for (t, (pn, pt)) in product(prompt_texts, post_prompts)]
+    all_prompts = [Prompt(t, pt, pn) for (t, (pn, pt)) in product(prompt_texts, post_prompts)]
     
     # other params
     seeds = list(range(3))
@@ -102,8 +100,6 @@ if __name__ == '__main__':
     threshes = [0.01, 0.03, 0.05]
     params = list(product(step_sizes, threshes, seeds, prompts))
     print(f'running {len(params)} param combinations')
-
-
 
     # start the outer loop
     for step_size, thresh, seed, prompt in tqdm.tqdm(params):
