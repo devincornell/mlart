@@ -139,7 +139,7 @@ class VQGANCLIP:
         if len(self.prev_losses) > 5:
             #if len([i for i in range(len(ls)-1) if (ls[i+1]-ls[i])>thresh]) > quit_after:    
             deltas = [abs(ls[i+1]-ls[i]) for i in range(len(ls)-1)]
-            if all([d < thresh for d in deltas[-quit_after:]]):
+            if sum(deltas[-quit_after:])/quit_after < thresh:
                 return True
         return False
 
