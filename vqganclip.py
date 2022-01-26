@@ -131,16 +131,17 @@ class VQGANCLIP:
         # increment epoch counter
         self.i += 1
     
-    def is_converged(self, thresh=0.01, quit_after=10):
-        '''Check if loss is less than thresh for quit_after iterations.
+    def is_converged(self, thresh=0.01, quit_after=3):
+        '''Check if loss is less than thresh for last quit_after iterations.
         '''
         ls = self.prev_losses
+        
         if len(self.prev_losses) > 5:
-            if len([i for i in range(len(ls)-1) if (ls[i+1]-ls[i])>thresh]) > quit_after:
-                #if self.prev_losses[-1] - self.prev_losses[-2] > 0.01:
-                #self.save_current_image(final_results_folder)
+            #if len([i for i in range(len(ls)-1) if (ls[i+1]-ls[i])>thresh]) > quit_after:    
+            deltas = [abs(ls[i+1]-ls[i]) for i in range(len(ls)-1)]
+            if all([d < thresh for d in deltas[-quit_after:]]):
                 return True
-        False
+        return False
 
     @torch.no_grad()
     def save_current_image(self, fname):
