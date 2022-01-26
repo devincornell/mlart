@@ -54,8 +54,8 @@ class Prompt:
 
 
 if __name__ == '__main__':
-    run_name = 'varun6'
-    max_iter = 150
+    run_name = 'vichi2'
+    max_iter = 300
     display_freq = None
     save_freq = 5
     image_path = pathlib.Path(f'images')
@@ -68,10 +68,17 @@ if __name__ == '__main__':
     gif_folder.mkdir(parents=True, exist_ok=True)
 
     prompt_texts = [
-        'trancendance',
-        'trancendance monk',
-        'buddhist monk',
-        'rainfall',
+        'New York City sunset',
+        'sunset in the city',
+        'starry night',
+        'starry night in the city',
+        'dark city',
+        'stars in the black sky',
+        'dark city night',
+        #'trancendance',
+        #'trancendance monk',
+        #'buddhist monk',
+        #'rainfall',
     ]
 
     post_prompts = [
@@ -100,10 +107,10 @@ if __name__ == '__main__':
         print(f'{base_name=}')
 
         trainer = vqganclip.VQGANCLIP(
-            init_image='images/start_images/varun_painting_1.jpeg',
-            size=[400, 600],
+            init_image='images/start_images/nyc.png',
+            size=[600, 400],
             text_prompts=[prompt.text],
-            image_prompts=['images/start_images/starry_night.png'],
+            image_prompts=['images/start_images/starry_night.png', 'images/start_images/nyc.png'],
             
             seed=seed,
             step_size=step_size,
