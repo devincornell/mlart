@@ -33,30 +33,11 @@ import vqganclip
 #from vqgan_clip_zquantize import *
 
 
-@dataclasses.dataclass
-class Prompt:
-    base_text: str
-    post_text: str
-    post_name: str
-
-    @property
-    def text(self):
-        return f'{self.base_text} {self.post_text}'
-
-    @property
-    def name(self):
-        text = self.base_text
-        text = text.translate(str.maketrans('', '', string.punctuation))
-        text = '_'.join(text.split())
-        text = text.replace('__', '_')
-        return f'{text}_{self.post_name}'
-
-
 if __name__ == '__main__':
 
     display_freq = None
     save_freq = 5
-    run_name = 'freedom4'
+    run_name = 'dante_change6'
     image_path = pathlib.Path(f'images')
     final_folder = image_path.joinpath(f'final/final_{run_name}/')
     training_folder = image_path.joinpath(f'training/training_{run_name}/')
@@ -66,76 +47,57 @@ if __name__ == '__main__':
     training_folder.mkdir(parents=True, exist_ok=True)
     gif_folder.mkdir(parents=True, exist_ok=True)
 
-    prompt_texts = [
-        #'freedom',
-        #'american flag freedom',
-        #'struggle for freedom',
-        'power and freedom',
-        'power of freedom',
-        'freedom from power',
-        'freedom is beautiful',
-        #'mountain scene at sunset',
-        #'sunset',
-        #'sunset view from a mountain'
-        #'sunset mountain scene',
-        #'beautiful sunset',
-    ]
-
-    post_prompts = [
-        ('', ''),
-        ('flickr', 'from Flickr'),
-        ('deviantart', 'from Deviantart'),
-        ('artstation', 'from Artstation'),
-        ('vray', 'from vray'),
-        ('ghibli', 'in the style of Studio Ghibli'),
-        ('unreal', 'rendered by Unreal Engine'),
-    ]
-
-    # generate prompts
-    all_prompts = [Prompt(t, pt, pn) for (t, (pn, pt)) in product(prompt_texts, post_prompts)]
+    # these will be changed in order provided
+    change_every = 100
+    prompt_texts = ['Limbo', 'Lust', 'Gluttony', 'Wrath', 'Heresy', 'Violence', 'Fraud', 'Treachery']
     
-    # other params
-    seeds = list(range(3))
-    step_sizes = [0.05, 0.025, 0.01]
-    threshes = [0.01, 0.03, 0.05]
-    params = list(product(step_sizes, threshes, seeds, prompts))
-    print(f'running {len(params)} param combinations')
+    # in order provided
+    prefix = ''
+    suffix = ''
+    prompt_texts = [f'{prefix}{pt}{suffix}' for pt in prompt_texts]
+    print(f'{prompt_texts=}')
 
-    # start the outer loop
-    for step_size, thresh, seed, prompt in tqdm.tqdm(params):
-        
-        base_name = f'{prompt.name}_step{step_size}_thresh{thresh}_{seed}'
-        print(f'{base_name=}')
 
-        trainer = vqganclip.VQGANCLIP(
-            text_prompts=[prompt.text],
-            init_image='images/start_images/kiersten_freedom_painting_cropped.jpeg',
-            size=[400, 600],
-            seed=seed,
-            step_size=step_size,
-            #device_name='cpu',
-        )
+    #base_name = f'{prompt.name}_step{step_size}_thresh{thresh}_{seed}'
+    base_name = f'dantes_inferno1'
+    print(f'{base_name=}')
 
-        with tqdm.tqdm() as train_progress_bar:
-            while True:
+    image_fname = 'images/start_images/dantes_inferno1.png'
 
-                # display output if needed
-                if display_freq is not None and (trainer.i % display_freq == 0):
-                    losses_str = ', '.join(f'{loss.item():g}' for loss in trainer.lossAll)
-                    tqdm.tqdm.write(f'{base_name}: i={trainer.i}, loss={sum(trainer.lossAll).item():g}, losses={losses_str}')
-                
-                # save image if required
-                if save_freq is not None and (trainer.i % save_freq == 0):
-                    trainer.save_current_image(training_folder.joinpath(f'{base_name}_training.png'))
-                    trainer.save_current_image(gif_folder.joinpath(f'{base_name}_iter{trainer.i:04d}.png'))
+    trainer = vqganclip.VQGANCLIP(
+        init_image=image_fname,
+        text_prompts=[prompt_texts[0]],
+        image_prompts=['images/start_images/sad_girl_red1.png'],
+        size=[600, 400],
+        seed=0,
+        #step_size=step_size,
+        #device_name='cpu',
+    )
 
-                # run epoch
-                trainer.epoch()
-                    
-                # check convergence
-                if trainer.is_converged(thresh=thresh, quit_after=5):
-                    trainer.save_current_image(final_folder.joinpath(f'{base_name}_final.png'))
-                    break
+    with tqdm.tqdm() as train_progress_bar:
+        while True:
 
-                # update progress
-                train_progress_bar.update()
+            # display output if needed
+            if display_freq is not None and (trainer.i % display_freq == 0):
+                losses_str = ', '.join(f'{loss.item():g}' for loss in trainer.lossAll)
+                tqdm.tqdm.write(f'{base_name}: i={trainer.i}, loss={sum(trainer.lossAll).item():g}, losses={losses_str}')
+            
+            # save image if required
+            if save_freq is not None and (trainer.i % save_freq == 0):
+                trainer.save_current_image(training_folder.joinpath(f'{base_name}_training.png'))
+                trainer.save_current_image(gif_folder.joinpath(f'{base_name}_iter{trainer.i:04d}.png'))
+
+            # run epoch
+            trainer.epoch()
+
+            # update text if needed
+            print(f'\n{prompt_texts[trainer.i // change_every]}')
+            trainer.set_text_prompts([prompt_texts[trainer.i // change_every]])
+
+            # kill condition
+            if trainer.i > change_every*len(prompt_texts):
+                trainer.save_current_image(final_folder.joinpath(f'{base_name}_final.png'))
+                break
+
+            # update progress
+            train_progress_bar.update()
