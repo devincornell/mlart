@@ -1,3 +1,6 @@
+*.gif
+*.jpg
+*.jpeg
 *.png
 *.pth
 *.ckpt
