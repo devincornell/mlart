@@ -54,7 +54,7 @@ class Prompt:
 
 
 if __name__ == '__main__':
-    run_name = 'vichi2'
+    run_name = 'bridge2'
     max_iter = 300
     display_freq = None
     save_freq = 5
@@ -68,13 +68,9 @@ if __name__ == '__main__':
     gif_folder.mkdir(parents=True, exist_ok=True)
 
     prompt_texts = [
-        'New York City sunset',
-        'sunset in the city',
-        'starry night',
-        'starry night in the city',
-        'dark city',
-        'stars in the black sky',
-        'dark city night',
+        'bright red flowers in the forest',
+        'red flowers in the jungle',
+        'red forest flowers'
         #'trancendance',
         #'trancendance monk',
         #'buddhist monk',
@@ -87,7 +83,7 @@ if __name__ == '__main__':
         #('deviantart', 'from Deviantart'),
         #('artstation', 'from Artstation'),
         #('vray', 'from vray'),
-        #('ghibli', 'in the style of Studio Ghibli'),
+        ('ghibli', 'in the style of Studio Ghibli'),
         #('unreal', 'rendered by Unreal Engine'),
     ]
 
@@ -106,11 +102,15 @@ if __name__ == '__main__':
         base_name = f'{prompt.name}_step{step_size}_{seed}'
         print(f'{base_name=}')
 
+        # make subfolder for storing each iteration
+        tmp_folder = gif_folder.joinpath(f'{base_name}/')
+        tmp_folder.mkdir(parents=True, exist_ok=True)
+
         trainer = vqganclip.VQGANCLIP(
-            init_image='images/start_images/nyc.png',
+            init_image='images/start_images/forest_bridge.png',
             size=[600, 400],
             text_prompts=[prompt.text],
-            image_prompts=['images/start_images/starry_night.png', 'images/start_images/nyc.png'],
+            image_prompts=['images/start_images/big_red_flower.avif'],
             
             seed=seed,
             step_size=step_size,
@@ -124,15 +124,11 @@ if __name__ == '__main__':
                 if display_freq is not None and (trainer.i % display_freq == 0):
                     losses_str = ', '.join(f'{loss.item():g}' for loss in trainer.lossAll)
                     tqdm.tqdm.write(f'{base_name}: i={trainer.i}, loss={sum(trainer.lossAll).item():g}, losses={losses_str}')
-
-                # make subfolder for storing each iteration
-                subfolder = gif_folder.joinpath(f'{base_name}/')
-                subfolder.mkdir(parents=True, exist_ok=True)
                 
                 # save image if required
                 if save_freq is not None and (trainer.i % save_freq == 0):
                     trainer.save_current_image(training_folder.joinpath(f'{base_name}_training.png'))
-                    trainer.save_current_image(subfolder.joinpath(f'{base_name}_iter{trainer.i:05d}.png'))
+                    trainer.save_current_image(tmp_folder.joinpath(f'{base_name}_iter{trainer.i:05d}.png'))
 
                 # run epoch
                 trainer.epoch()
@@ -142,7 +138,7 @@ if __name__ == '__main__':
                     trainer.save_current_image(final_folder.joinpath(f'{base_name}_final.png'))
                     
                     # save a gif image
-                    images = [imageio.imread(fn) for fn in sorted(map(str, subfolder.glob('*.png')))]
+                    images = [imageio.imread(fn) for fn in sorted(map(str, tmp_folder.glob('*.png')))]
                     imageio.mimsave(final_folder.joinpath(f'{base_name}_final.gif'), images, duration=0.5)
                     
                     #convert -delay 100 -loop 0 images/gifs/gifs_sunset7_starrynight/bright_stars_in_the_sky__step0.05_0/*.png
