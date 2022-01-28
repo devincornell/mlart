@@ -42,7 +42,7 @@ class Prompt:
 
     @property
     def text(self):
-        return f'{self.base_text} {self.post_text}'
+        return f'{self.base_text}{self.post_text}'
 
     @property
     def name(self):
@@ -54,10 +54,10 @@ class Prompt:
 
 
 if __name__ == '__main__':
-    run_name = 'bridge2'
-    max_iter = 300
+    run_name = 'varun8'
+    max_iter = 500
     display_freq = None
-    save_freq = 5
+    save_freq = 2
     image_path = pathlib.Path(f'images')
     final_folder = image_path.joinpath(f'final/{run_name}/')
     training_folder = image_path.joinpath(f'training/{run_name}/')
@@ -68,23 +68,23 @@ if __name__ == '__main__':
     gif_folder.mkdir(parents=True, exist_ok=True)
 
     prompt_texts = [
-        'bright red flowers in the forest',
-        'red flowers in the jungle',
-        'red forest flowers'
-        #'trancendance',
-        #'trancendance monk',
-        #'buddhist monk',
-        #'rainfall',
+        'trancendance',
+        'tranquility',
+        'tranquility and trancendance',
+        'rainfall',
+        'lotus flower',
+        'lotus flower on a pond',
+        '',
     ]
 
     post_prompts = [
         ('', ''),
-        #('flickr', 'from Flickr'),
-        #('deviantart', 'from Deviantart'),
-        #('artstation', 'from Artstation'),
-        #('vray', 'from vray'),
-        ('ghibli', 'in the style of Studio Ghibli'),
-        #('unreal', 'rendered by Unreal Engine'),
+        #('flickr', ' from Flickr'),
+        ('deviantart', ' from Deviantart'),
+        ('artstation', ' from Artstation'),
+        ('vray', ' from vray'),
+        ('ghibli', ' in the style of Studio Ghibli'),
+        #('unreal', ' rendered by Unreal Engine'),
     ]
 
     # generate prompts
@@ -107,15 +107,20 @@ if __name__ == '__main__':
         tmp_folder.mkdir(parents=True, exist_ok=True)
 
         trainer = vqganclip.VQGANCLIP(
-            init_image='images/start_images/forest_bridge.png',
-            size=[600, 400],
+            init_image='images/stock_images/varun_painting_1.jpeg',
+            size=[400, 600],
             text_prompts=[prompt.text],
-            image_prompts=['images/start_images/big_red_flower.avif'],
+            #image_prompts=['images/stock_images/pink_blue_windows.png'],
             
             seed=seed,
             step_size=step_size,
             #device_name='cpu',
         )
+
+        # save original image for some number of frames before changing
+        for i in range(10):
+            trainer.save_current_image(tmp_folder.joinpath(f'{base_name}_iter.{i:05d}.png'))
+
 
         with tqdm.tqdm() as train_progress_bar:
             while True:
