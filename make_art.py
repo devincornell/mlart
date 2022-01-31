@@ -33,29 +33,16 @@ import vqgan_clip_zquantize
 import vqganclip
 #from vqgan_clip_zquantize import *
 
-
-@dataclasses.dataclass
-class Prompt:
-    base_text: str
-    post_text: str
-    post_name: str
-
-    @property
-    def text(self):
-        return f'{self.base_text}{self.post_text}'
-
-    @property
-    def name(self):
-        text = self.base_text
-        text = text.translate(str.maketrans('', '', string.punctuation))
-        text = '_'.join(text.split())
-        text = text.replace('__', '_')
-        return f'{text}_{self.post_name}'
-
+def text_to_name(text):
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    text = '_'.join(text.split())
+    text = text.replace('__', '_')
+    return f'{text}'
 
 if __name__ == '__main__':
-    run_name = 'varun8'
-    max_iter = 500
+    run_name = 'sujaya08_angel'
+    max_iter = 300
+    step_size = 0.05
     display_freq = None
     save_freq = 2
     image_path = pathlib.Path(f'images')
@@ -67,59 +54,65 @@ if __name__ == '__main__':
     training_folder.mkdir(parents=True, exist_ok=True)
     gif_folder.mkdir(parents=True, exist_ok=True)
 
-    prompt_texts = [
-        'trancendance',
-        'tranquility',
-        'tranquility and trancendance',
-        'rainfall',
-        'lotus flower',
-        'lotus flower on a pond',
-        '',
+    text_prompts = [
+        'dark angel',
+        'dark angel wings',
+        'thor god of thunder',
+        'ares god of war',
+        'devil satan',
+        'fiery hell',
     ]
 
-    post_prompts = [
+    text_prompts_post = [
         ('', ''),
-        #('flickr', ' from Flickr'),
+        ('ghibli', ' in the style of Studio Ghibli'),
         ('deviantart', ' from Deviantart'),
         ('artstation', ' from Artstation'),
         ('vray', ' from vray'),
-        ('ghibli', ' in the style of Studio Ghibli'),
+        #('flickr', ' from Flickr'),
         #('unreal', ' rendered by Unreal Engine'),
     ]
 
-    # generate prompts
-    all_prompts = [Prompt(t, pt, pn) for (t, (pn, pt)) in product(prompt_texts, post_prompts)]
+
+    size = [500, 600]
+    image_init = pathlib.Path('images/stock_images/sujaya_angel.jpg')# None
+    image_prompts = [
+        image_init,
+        pathlib.Path('images/stock_images/dark_angel.png'),
+    ]
     
     # other params
-    seeds = list(range(3))
-    step_sizes = [0.05, 0.025, 0.01]
-    params = list(product(seeds, step_sizes, all_prompts))
+    params = list(product(list(range(3)), text_prompts_post, text_prompts))
     print(f'running {len(params)} param combinations')
 
     # start the outer loop
-    for seed, step_size, prompt in tqdm.tqdm(params):
+    for seed, (post_name, post_text), text_prompt in tqdm.tqdm(params):
         
-        base_name = f'{prompt.name}_step{step_size}_{seed}'
-        print(f'{base_name=}')
+        # parse params to filenames
+        text_prompt_name = text_to_name(text_prompt)
+        image_init_name = image_init.stem if image_init is not None else None
+        image_prompt_name = ".".join([p.stem for p in image_prompts])
+        fname_base = f'{run_name}-{text_prompt_name}-{post_name}-{image_init_name}-{image_prompt_name}-{seed}'
+        print(f'{run_name=}\n{text_prompt_name=}\n{image_init_name=}\n{image_prompt_name=}')
+        print(f'{fname_base=}')
 
-        # make subfolder for storing each iteration
-        tmp_folder = gif_folder.joinpath(f'{base_name}/')
+        # make subfolder for storing each iteration for gif
+        tmp_folder = gif_folder.joinpath(f'{fname_base}/')
         tmp_folder.mkdir(parents=True, exist_ok=True)
 
+        # add paramaters to trainer
         trainer = vqganclip.VQGANCLIP(
-            init_image='images/stock_images/varun_painting_1.jpeg',
-            size=[400, 600],
-            text_prompts=[prompt.text],
-            #image_prompts=['images/stock_images/pink_blue_windows.png'],
-            
+            size=size,
+            init_image=str(image_init),
+            text_prompts=[f'{text_prompt}{post_text}'],
+            image_prompts=[str(fn) for fn in image_prompts],
             seed=seed,
             step_size=step_size,
-            #device_name='cpu',
         )
 
         # save original image for some number of frames before changing
-        for i in range(10):
-            trainer.save_current_image(tmp_folder.joinpath(f'{base_name}_iter.{i:05d}.png'))
+        for i in range(5):
+            trainer.save_current_image(tmp_folder.joinpath(f'{fname_base}_iter.{i:05d}.png'))
 
 
         with tqdm.tqdm() as train_progress_bar:
@@ -128,23 +121,27 @@ if __name__ == '__main__':
                 # display output if needed
                 if display_freq is not None and (trainer.i % display_freq == 0):
                     losses_str = ', '.join(f'{loss.item():g}' for loss in trainer.lossAll)
-                    tqdm.tqdm.write(f'{base_name}: i={trainer.i}, loss={sum(trainer.lossAll).item():g}, losses={losses_str}')
+                    tqdm.tqdm.write(f'{fname_base}: i={trainer.i}, loss={sum(trainer.lossAll).item():g}, losses={losses_str}')
                 
                 # save image if required
                 if save_freq is not None and (trainer.i % save_freq == 0):
-                    trainer.save_current_image(training_folder.joinpath(f'{base_name}_training.png'))
-                    trainer.save_current_image(tmp_folder.joinpath(f'{base_name}_iter{trainer.i:05d}.png'))
+                    trainer.save_current_image(training_folder.joinpath(f'{fname_base}_training.png'))
+                    trainer.save_current_image(tmp_folder.joinpath(f'{fname_base}_iter{trainer.i:05d}.png'))
 
                 # run epoch
                 trainer.epoch()
                     
                 # check convergence
                 if trainer.i > max_iter or trainer.is_converged(thresh=0.001, quit_after=10):
-                    trainer.save_current_image(final_folder.joinpath(f'{base_name}_final.png'))
+                    trainer.save_current_image(final_folder.joinpath(f'{fname_base}_final.png'))
+
+                    # save final result for a few frames
+                    for i in range(trainer.i+1, trainer.i+6):
+                        trainer.save_current_image(tmp_folder.joinpath(f'{fname_base}_iter.{i:05d}.png'))
                     
                     # save a gif image
                     images = [imageio.imread(fn) for fn in sorted(map(str, tmp_folder.glob('*.png')))]
-                    imageio.mimsave(final_folder.joinpath(f'{base_name}_final.gif'), images, duration=0.5)
+                    imageio.mimsave(final_folder.joinpath(f'{fname_base}_final.gif'), images, duration=0.2)
                     
                     #convert -delay 100 -loop 0 images/gifs/gifs_sunset7_starrynight/bright_stars_in_the_sky__step0.05_0/*.png
                     break
