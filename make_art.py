@@ -40,7 +40,7 @@ def text_to_name(text):
     return f'{text}'
 
 if __name__ == '__main__':
-    run_name = 'sujaya08_angel'
+    run_name = 'devin01_lightwave'
     max_iter = 300
     step_size = 0.05
     display_freq = None
@@ -55,17 +55,15 @@ if __name__ == '__main__':
     gif_folder.mkdir(parents=True, exist_ok=True)
 
     text_prompts = [
-        'dark angel',
-        'dark angel wings',
-        'thor god of thunder',
-        'ares god of war',
-        'devil satan',
-        'fiery hell',
+        'lightwave',
+        'light wave',
+        'sparkling colorful lights',
+        'lightsabers',
     ]
 
     text_prompts_post = [
         ('', ''),
-        ('ghibli', ' in the style of Studio Ghibli'),
+        #('ghibli', ' in the style of Studio Ghibli'),
         ('deviantart', ' from Deviantart'),
         ('artstation', ' from Artstation'),
         ('vray', ' from vray'),
@@ -74,15 +72,16 @@ if __name__ == '__main__':
     ]
 
 
-    size = [500, 600]
-    image_init = pathlib.Path('images/stock_images/sujaya_angel.jpg')# None
+    size = [600, 500]
+    image_init = pathlib.Path('images/stock_images/devin_lightwave.png')# None
     image_prompts = [
-        image_init,
-        pathlib.Path('images/stock_images/dark_angel.png'),
+        #image_init,
+        #pathlib.Path('images/stock_images/sunset_forest.png'),
+        #pathlib.Path('images/stock_images/starry_night.png')
     ]
     
     # other params
-    params = list(product(list(range(3)), text_prompts_post, text_prompts))
+    params = list(product(list(range(1)), text_prompts_post, text_prompts))
     print(f'running {len(params)} param combinations')
 
     # start the outer loop
@@ -137,7 +136,7 @@ if __name__ == '__main__':
 
                     # save final result for a few frames
                     for i in range(trainer.i+1, trainer.i+6):
-                        trainer.save_current_image(tmp_folder.joinpath(f'{fname_base}_iter.{i:05d}.png'))
+                        trainer.save_current_image(tmp_folder.joinpath(f'{fname_base}_iter{i:05d}.png'))
                     
                     # save a gif image
                     images = [imageio.imread(fn) for fn in sorted(map(str, tmp_folder.glob('*.png')))]
