@@ -13,14 +13,12 @@ import vqgan_clip_zquantize
 
 @dataclasses.dataclass
 class VQGANCLIP:
-    text_prompts: list # list of text prompts
     size: list # size of output image
-    
+    init_image: str = None
+    text_prompts: list = dataclasses.field(default_factory=list) # list of text prompts
     image_prompts: list = dataclasses.field(default_factory=list)
     noise_prompt_seeds: list = dataclasses.field(default_factory=list)
     noise_prompt_weights: list = dataclasses.field(default_factory=list)
-    
-    init_image: str = None
     
     # training params
     init_weight: float = 0.
