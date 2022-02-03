@@ -1,85 +1,74 @@
-
+import typing
+from typing import List, Dict
 import tqdm
 import pathlib
 from itertools import product
-
-#sys.path.append('./taming-transformers')
+import dataclasses
 
 import gifmaker
 
+
 if __name__ == '__main__':
 
-    #text_prompts_post = [
-        #('', ''),
-        #('ghibli', ' in the style of Studio Ghibli'),
-        #('deviantart', ' from Deviantart'),
-        #('artstation', ' from Artstation'),
-        #('vray', ' from vray'),
-        #('flickr', ' from Flickr'),
-        #('unreal', ' rendered by Unreal Engine'),
-    #]
+    imfp = pathlib.Path('resource_images')
 
-    size = [600, 400]
-    init_image = pathlib.Path('images/stock_images/angela_garden1.jpg')
-    all_image_prompts = [
-        {
-            0: [
-                init_image,
-                #pathlib.Path('images/stock_images/dantes_inferno1.png'),
-            ],
-            200: [
-                init_image,
-                pathlib.Path('images/stock_images/sunset_forest.png'),
-            ],
-        },
-        #[
-        #    init_image,
-        #    pathlib.Path('images/stock_images/cosmos_stock.png'),
-        #],
-        #[
-        #    init_image,
-        #    pathlib.Path('images/stock_images/starry_night.png'),
-        #],
-        #[
-        #    init_image,
-        #    pathlib.Path('images/stock_images/gia_fractal_deviantart.png'),
-        #],
-        #[
-        #    init_image,
-        #    pathlib.Path('images/stock_images/many_red_flowers.png'),
-        #],
-    ]
-
-    if not all(p.exists() for ipt in all_image_prompts for ps in ipt.values() for p in ps):
-        s = '\n'.join([f'{p}: {p.exists()}' for ipt in all_image_prompts for ps in ipt.values() for p in ps])
-        raise ValueError(f'not all images were found! {s}')
-
-    all_text_prompts = [
-        {0: ['blue flowers'], 100: ['red flowers'], 200: ['sunset in the forest']},
-        #['lightwave',],
-        #['light wave',],
-        #['sparkling colorful lights',],
-        #['lightsabers',],
+    all_params = [
+        gifmaker.AnimateParams(
+            size = [500, 600],
+            init_image = imfp.joinpath('kiersten/kiersten_dog.png'),
+            img_prompts = {
+                0: [
+                    imfp.joinpath('kiersten/kiersten_owl_eyes.png')
+                ]
+            },
+            txt_prompts = {},
+        ),
+        gifmaker.AnimateParams(
+            size = [500, 600],
+            init_image = imfp.joinpath('kiersten/kiersten_dog.png'),
+            img_prompts = {
+                0: [
+                    imfp.joinpath('stock_photos/cosmos_stock.png')
+                ]
+            },
+            txt_prompts = {},
+        ),
+        gifmaker.AnimateParams(
+            size = [500, 600],
+            init_image = imfp.joinpath('kiersten/kiersten_dog.png'),
+            img_prompts = {
+                0: [imfp.joinpath('stock_photos/flag_horizontal.png')]
+            },
+            txt_prompts = {},
+        ),
+        gifmaker.AnimateParams(
+            size = [500, 600],
+            init_image = imfp.joinpath('kiersten/kiersten_dog.png'),
+            img_prompts = {
+                0: [imfp.joinpath('stock_photos/forest_bridge.png')]
+            },
+            txt_prompts = {},
+        ),
+        gifmaker.AnimateParams(
+            size = [500, 600],
+            init_image = imfp.joinpath('kiersten/kiersten_dog.png'),
+            img_prompts = {
+                0: [imfp.joinpath('stock_photos/pink_blue_windows.png')]
+            },
+            txt_prompts = {},
+        ),
     ]
     
     # count params
-    params = list(product(all_image_prompts, all_text_prompts))
-    print(f'running {len(params)} param combinations')
+    print(f'running {len(all_params)} param configurations')
 
     # start the outer loop
-    for image_prompt_times, text_prompt_times in tqdm.tqdm(params):
+    for params in tqdm.tqdm(all_params):
         gifmaker.make_gif(
-            'test06', 
-            pathlib.Path(f'images'), 
-            init_image = init_image, 
-            image_prompt_times = image_prompt_times, 
-            text_prompt_times = text_prompt_times, 
-            size = size, 
-            save_freq = 2, 
-            step_size = 0.05, 
-            max_iter = 300, 
+            'jhilam01_cityscape', 
+            pathlib.Path(f'output/group04'), 
+            params,
             seed = 0, 
-            still_frames = 0, 
             display_freq = None
         )
 
