@@ -14,47 +14,51 @@ if __name__ == '__main__':
 
     all_params = [
         gifmaker.AnimateParams(
-            size = [500, 600],
-            init_image = imfp.joinpath('kiersten/kiersten_dog.png'),
-            img_prompts = {
-                0: [
-                    imfp.joinpath('kiersten/kiersten_owl_eyes.png')
-                ]
-            },
+            size = [600, 400],
+            init_image = imfp.joinpath('stock_photos/nyc.png'),
+            img_prompts = {0: [imfp.joinpath('jhilam/jhilam01.png')]},
             txt_prompts = {},
         ),
         gifmaker.AnimateParams(
-            size = [500, 600],
-            init_image = imfp.joinpath('kiersten/kiersten_dog.png'),
-            img_prompts = {
-                0: [
-                    imfp.joinpath('stock_photos/cosmos_stock.png')
-                ]
-            },
+            size = [600, 400],
+            init_image = imfp.joinpath('stock_photos/nyc.png'),
+            img_prompts = {0: [imfp.joinpath('jhilam/jhilam02_cropped.png')]},
             txt_prompts = {},
         ),
         gifmaker.AnimateParams(
-            size = [500, 600],
-            init_image = imfp.joinpath('kiersten/kiersten_dog.png'),
-            img_prompts = {
-                0: [imfp.joinpath('stock_photos/flag_horizontal.png')]
-            },
+            size = [600, 400],
+            init_image = imfp.joinpath('stock_photos/nyc.png'),
+            img_prompts = {0: [imfp.joinpath('jhilam/jhilam03.png')]},
             txt_prompts = {},
         ),
         gifmaker.AnimateParams(
-            size = [500, 600],
-            init_image = imfp.joinpath('kiersten/kiersten_dog.png'),
-            img_prompts = {
-                0: [imfp.joinpath('stock_photos/forest_bridge.png')]
-            },
+            size = [600, 400],
+            init_image = imfp.joinpath('stock_photos/nyc.png'),
+            img_prompts = {0: [imfp.joinpath('jhilam/jhilam04.png')]},
             txt_prompts = {},
         ),
         gifmaker.AnimateParams(
-            size = [500, 600],
-            init_image = imfp.joinpath('kiersten/kiersten_dog.png'),
-            img_prompts = {
-                0: [imfp.joinpath('stock_photos/pink_blue_windows.png')]
-            },
+            size = [600, 400],
+            init_image = imfp.joinpath('stock_photos/nyc.png'),
+            img_prompts = {0: [imfp.joinpath('jhilam/jhilam04.png')]},
+            txt_prompts = {0: ['beautiful sunset in the city']},
+        ),
+        gifmaker.AnimateParams(
+            size = [600, 400],
+            init_image = imfp.joinpath('stock_photos/nyc.png'),
+            img_prompts = {0: [imfp.joinpath('jhilam/jhilam04.png')]},
+            txt_prompts = {0: ['colors of the city']},
+        ),
+        gifmaker.AnimateParams(
+            size = [600, 400],
+            init_image = imfp.joinpath('stock_photos/nyc.png'),
+            img_prompts = {0: [imfp.joinpath('jhilam/jhilam04.png')]},
+            txt_prompts = {0: ['beautiful colors in the city']},
+        ),
+        gifmaker.AnimateParams(
+            size = [600, 400],
+            init_image = imfp.joinpath('stock_photos/nyc.png'),
+            img_prompts = {0: [imfp.joinpath('jhilam/jhilam05.png')]},
             txt_prompts = {},
         ),
     ]
