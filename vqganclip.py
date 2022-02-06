@@ -38,7 +38,7 @@ class VQGANCLIP:
     prev_losses: typing.Any = dataclasses.field(default_factory=list)
 
     def __post_init__(self):
-
+        
         self.device = torch.device(self.device_name if torch.cuda.is_available() else 'cpu')
 
         self.model = vqgan_clip_zquantize.load_vqgan_model(self.vqgan_config, self.vqgan_checkpoint).to(self.device)
@@ -59,7 +59,7 @@ class VQGANCLIP:
             torch.manual_seed(self.seed)
 
         # initialize image
-        if self.init_image:
+        if self.init_image is not None:
             pil_image = Image.open(vqgan_clip_zquantize.fetch(self.init_image)).convert('RGB')
             pil_image = pil_image.resize(self.side_shape, Image.LANCZOS)
             self.z, *_ = self.model.encode(TF.to_tensor(pil_image).to(self.device).unsqueeze(0) * 2 - 1)
@@ -67,6 +67,7 @@ class VQGANCLIP:
             one_hot = F.one_hot(torch.randint(n_toks, [toksY * toksX], device=self.device), n_toks).float()
             self.z = one_hot @ self.model.quantize.embedding.weight
             self.z = self.z.view([-1, toksY, toksX, e_dim]).permute(0, 3, 1, 2)
+            
         self.z_orig = self.z.clone()
         self.z.requires_grad_(True)
         self.opt = optim.Adam([self.z], lr=self.step_size)
