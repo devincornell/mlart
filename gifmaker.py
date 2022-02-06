@@ -14,24 +14,38 @@ import imageio
 import typing
 from typing import List, Dict
 import vqganclip
-
+import PIL
 
 @dataclasses.dataclass
 class AnimateParams:
-    size: typing.Tuple
-    init_image: pathlib.Path
-    img_prompts: Dict[int, List[pathlib.Path]]
-    txt_prompts: Dict[int, List[str]]
+    init_image: pathlib.Path = None
+    img_prompts: Dict[int, List[pathlib.Path]] = dataclasses.field(default_factory=list)
+    txt_prompts: Dict[int, List[str]] = dataclasses.field(default_factory=list)
     init_image_as_prompt: bool = True
+    size: typing.Tuple = None
     still_frames: int = 5
     save_freq: int = 2
     step_size: float = 0.05
     max_iter: int = 300
 
     def __post_init__(self):
+        if self.size is None and self.init_image is not None:
+            w,h = PIL.Image.open(self.init_image).size
+            aspect_ratio = w/h
 
+            if w > h:
+                wb = 600
+                hb = int(wb/aspect_ratio)
+            else:
+                hb = 600
+                wb = int(hb*aspect_ratio)
+                
+            self.size = (wb, hb)
+
+            print(f'calculated size from init image: {self.size}')
+        
         # add init image to every image prompt
-        if self.init_image_as_prompt:
+        if self.init_image_as_prompt and self.init_image is not None:
             for fps in self.img_prompts.values():
                 if self.init_image not in fps:
                     fps.append(self.init_image)
@@ -41,7 +55,7 @@ class AnimateParams:
         self.txt_prompts = {t:[txt for txt in sorted(txts)] for t,txts in sorted(self.txt_prompts.items())}
 
         # check that init image exists
-        if not (self.init_image is None or self.init_image.exists()):
+        if self.init_image is not None and not self.init_image.exists():
             raise ValueError(f'Init image {self.init_image} does not exist.')
 
         # check that prompt images exist
@@ -111,7 +125,7 @@ def make_gif(
     # add paramaters to trainer
     trainer = vqganclip.VQGANCLIP(
         size=params.size,
-        init_image=str(params.init_image),
+        init_image=str(params.init_image) if params.init_image is not None else None,
         seed=seed,
         step_size=params.step_size,
 
