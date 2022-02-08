@@ -23,10 +23,12 @@ class AnimateParams:
     txt_prompts: Dict[int, List[str]] = dataclasses.field(default_factory=list)
     init_image_as_prompt: bool = True
     size: typing.Tuple = None
-    still_frames: int = 5
+    still_frames_start: int = 5
+    still_frames_end: int = 30
     save_freq: int = 2
     step_size: float = 0.05
     max_iter: int = 300
+    seed: int = 0
 
     def __post_init__(self):
         if self.size is None and self.init_image is not None:
@@ -98,7 +100,6 @@ def make_gif(
         run_name: str, 
         output_path: pathlib.Path, 
         params: AnimateParams,
-        seed: int = 0,
         display_freq: int = None
     ):
 
@@ -114,7 +115,7 @@ def make_gif(
     #init_image_name = init_image.stem if init_image is not None else None
     #image_prompt_name = "+".join([f'{t}={".".join([p.stem for p in ips])}' for t, ips in image_prompt_times.items()])
     #text_prompt_name = "+".join([f'{t}={".".join([text_to_name(tp) for tp in tps])}' for t, tps in text_prompt_times.items()])
-    fname_base = f'{run_name}-{params.init_image_name}-im{params.img_prompt_name}-text{params.txt_prompt_name}-{seed}'
+    fname_base = f'{run_name}-{params.init_image_name}-im{params.img_prompt_name}-text{params.txt_prompt_name}-{params.seed}'
     print(f'{run_name=}\n{params.init_image_name=}\n{params.img_prompt_name=}\n{params.txt_prompt_name=}')
     print(f'{fname_base=}')
 
@@ -126,7 +127,7 @@ def make_gif(
     trainer = vqganclip.VQGANCLIP(
         size=params.size,
         init_image=str(params.init_image) if params.init_image is not None else None,
-        seed=seed,
+        seed=params.seed,
         step_size=params.step_size,
 
         # these two are added during training since they have timesteps now
@@ -135,7 +136,7 @@ def make_gif(
     )
 
     # save original image for some number of frames before changing
-    for i in range(params.still_frames):
+    for i in range(params.still_frames_start):
         trainer.save_current_image(tmp_folder.joinpath(f'{fname_base}_iter.{i:05d}.png'))
 
     with tqdm.tqdm() as train_progress_bar:
@@ -174,7 +175,7 @@ def make_gif(
     trainer.save_current_image(final_folder.joinpath(f'{fname_base}_final.png'))
 
     # save final result for a few frames
-    for i in range(trainer.i+1, trainer.i+params.still_frames+1):
+    for i in range(trainer.i+1, trainer.i+params.still_frames_end+1):
         trainer.save_current_image(tmp_folder.joinpath(f'{fname_base}_iter{i:05d}.png'))
     
     # save a gif image
