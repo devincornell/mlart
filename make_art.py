@@ -29,24 +29,35 @@ if __name__ == '__main__':
     #    ))
 
 
-    texts = [
-        'Angels Landing Artstation',
-        'Angels Landing Ghibli',
-        'Grand Canyon Artstation',
-        'Grand Canyon Ghibli',
-        'building at sunset Artstation',
-        'building at sunset Deviantart',
-        'building at sunset Ghibli',
-        'sunset in the city Artstation',
-        'sunset in the city Deviantart',
-        'sunset in the city Ghibli',
+    prefixes = [
+        #'building at sunset',
+        'sunset in the city',
+        #'city sunset',
+        #'city skyline',
+        #'mountain scene',
+        #'mountain scene with trees',
     ]
+    postfixes = [
+        '',
+        ' in the style of Studio Ghibli',
+        ' Ghibli',
+        ' Studio Ghibli',
+        ' Flickr',
+        ' on Flickr',
+        ' on Deviantart',
+        ' Deviantart',
+        ' Artstation',
+        ' Vray',
+        ' Unreal Engine',
+    ]
+    texts = [f'{pre}{post}' for pre, post in product(prefixes, postfixes)]
+
     kwargs = dict(
         size = [600, 400],
         max_iter = 300,
     )
     all_params = list()
-    for seed, text in product(range(5), texts):
+    for seed, text in product(range(10), texts):
         all_params.append(gifmaker.AnimateParams(
             #size = size,
             init_image = None,
@@ -62,7 +73,7 @@ if __name__ == '__main__':
     # start the outer loop
     for params in tqdm.tqdm(all_params):
         gifmaker.make_gif(
-            'stylized03', 
+            'om', 
             pathlib.Path(f'output/blog01'), 
             params,
             display_freq = None
