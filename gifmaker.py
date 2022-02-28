@@ -15,12 +15,13 @@ import typing
 from typing import List, Dict
 import vqganclip
 import PIL
+import copy
 
 @dataclasses.dataclass
 class AnimateParams:
     init_image: pathlib.Path = None
-    img_prompts: Dict[int, List[pathlib.Path]] = dataclasses.field(default_factory=list)
-    txt_prompts: Dict[int, List[str]] = dataclasses.field(default_factory=list)
+    img_prompts: Dict[int, List[pathlib.Path]] = dataclasses.field(default_factory=dict)
+    txt_prompts: Dict[int, List[str]] = dataclasses.field(default_factory=dict)
     init_image_as_prompt: bool = True
     size: typing.Tuple = None
     still_frames_start: int = 5
@@ -31,6 +32,11 @@ class AnimateParams:
     seed: int = 0
 
     def __post_init__(self):
+
+        # make copies of prompts
+        self.img_prompts = copy.deepcopy(self.img_prompts)
+        self.txt_prompts = copy.deepcopy(self.txt_prompts)
+
         if self.size is None and self.init_image is not None:
             w,h = PIL.Image.open(self.init_image).size
             aspect_ratio = w/h
@@ -116,6 +122,7 @@ def make_gif(
     #image_prompt_name = "+".join([f'{t}={".".join([p.stem for p in ips])}' for t, ips in image_prompt_times.items()])
     #text_prompt_name = "+".join([f'{t}={".".join([text_to_name(tp) for tp in tps])}' for t, tps in text_prompt_times.items()])
     fname_base = f'{run_name}-{params.init_image_name}-im{params.img_prompt_name}-text{params.txt_prompt_name}-{params.seed}'
+    fname_base = fname_base[:200]
     print(f'{run_name=}\n{params.init_image_name=}\n{params.img_prompt_name=}\n{params.txt_prompt_name=}')
     print(f'{fname_base=}')
 
