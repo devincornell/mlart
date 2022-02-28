@@ -40,6 +40,7 @@ class VQGANCLIP:
     def __post_init__(self):
         
         self.device = torch.device(self.device_name if torch.cuda.is_available() else 'cpu')
+        print(f'{self.device=}')
 
         self.model = vqgan_clip_zquantize.load_vqgan_model(self.vqgan_config, self.vqgan_checkpoint).to(self.device)
         self.perceptor = vqgan_clip_zquantize.clip.load(self.clip_model, jit=False)[0].eval().requires_grad_(False).to(self.device)
