@@ -11,70 +11,59 @@ import gifmaker
 if __name__ == '__main__':
 
     imfp = pathlib.Path('resource_images')
+    kwargs = dict(save_freq=2)
+
+    texts = [
+        ['transcendance'],
+        ['peace'],
+        ['love'],
+        ['peace and love'],
+        #['culture'],
+        #['culture and algorithms'],
+        #['beautiful sunset'],
+        #['sunset clouds in the mountains'],
+        #['mountain sunset'],
+        #['green forest'],
+        #['lush garden'],
+        #['jungle'],
+        #['jungle forest'],
+        #['forest at sunset'],
+        #['blue ocean'],
+        #['reflection in the water'],
+        #['Christian Christianity'],
+        #['Star Wars'],
+        #['women, fire, and dangerous things'],
+    ]
+    prefixes = ['', ' Ghibli', ' in the style of Studio Ghibli', ' Studio Ghibli', ' Artstation', ' Artstation style', ' Deviantart style']
+
+    texts = [[]] + [[f'{t}{pre}' for t in ts] for ts, pre in product(texts, prefixes)]
+
+    img_prompts = [[]] + [[fp] for fp in imfp.glob('artur_rosa/*.png')]
+
+    init_imgs = list(imfp.glob('devin/ig/*.png'))
     
-    #kwargs = dict(
-    #    #init_image = imfp.joinpath('angela/angela_garden1.jpg'),
-    #)
-    #jhilams = imfp.joinpath('jhilam').glob('*.png')
-    #stocks = imfp.joinpath('stock_photos').glob('*.png')
-#
-    #all_params = list()
-    #for jfp, sfp in product(jhilams, stocks):
-    #    all_params.append(gifmaker.AnimateParams(
-    #        #size = size,
-    #        init_image = sfp,
-    #        img_prompts = {0: [jfp]},
-    #        txt_prompts = {},
-    #        **kwargs,
-    #    ))
-
-
-    prefixes = [
-        #'building at sunset',
-        'sunset in the city',
-        #'city sunset',
-        #'city skyline',
-        #'mountain scene',
-        #'mountain scene with trees',
-    ]
-    postfixes = [
-        '',
-        ' in the style of Studio Ghibli',
-        ' Ghibli',
-        ' Studio Ghibli',
-        ' Flickr',
-        ' on Flickr',
-        ' on Deviantart',
-        ' Deviantart',
-        ' Artstation',
-        ' Vray',
-        ' Unreal Engine',
-    ]
-    texts = [f'{pre}{post}' for pre, post in product(prefixes, postfixes)]
-
-    kwargs = dict(
-        size = [600, 400],
-        max_iter = 300,
-    )
     all_params = list()
-    for seed, text in product(range(10), texts):
+    for ii, ips, txts in product(init_imgs, img_prompts, texts):
+        #print(f'{ii}, {ips}, {txts}\n')
         all_params.append(gifmaker.AnimateParams(
-            #size = size,
-            init_image = None,
-            img_prompts = {},
-            txt_prompts = {0: [text]},
-            seed = seed,
+            init_image = ii,
+            img_prompts = {0:ips},
+            txt_prompts = {0:txts},
+            max_iter = 300,
+            init_image_as_prompt = True,
             **kwargs,
         ))
     
     # count params
     print(f'running {len(all_params)} param configurations')
 
+    #exit()
+
     # start the outer loop
     for params in tqdm.tqdm(all_params):
         gifmaker.make_gif(
-            'om', 
-            pathlib.Path(f'output/blog01'), 
+            'ig01', 
+            pathlib.Path(f'output/instagram'), 
             params,
             display_freq = None
         )
