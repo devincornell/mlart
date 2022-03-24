@@ -15,8 +15,8 @@ if __name__ == '__main__':
 
     texts = [
         ['transcendance'],
-        ['peace'],
-        ['love'],
+        #['peace'],
+        #['love'],
         ['peace and love'],
         #['culture'],
         #['culture and algorithms'],
@@ -34,13 +34,13 @@ if __name__ == '__main__':
         #['Star Wars'],
         #['women, fire, and dangerous things'],
     ]
-    prefixes = ['', ' Ghibli', ' in the style of Studio Ghibli', ' Studio Ghibli', ' Artstation', ' Artstation style', ' Deviantart style']
+    suffixes = ['', ' in the style of Studio Ghibli', ' Artstation']
 
-    texts = [[]] + [[f'{t}{pre}' for t in ts] for ts, pre in product(texts, prefixes)]
+    texts = [[]] + [[f'{t}{pre}' for t in ts] for ts, pre in product(texts, suffixes)]
 
-    img_prompts = [[]] + [[fp] for fp in imfp.glob('artur_rosa/*.png')]
+    img_prompts = [[]] + [[fp] for fp in imfp.glob('famous_paintings/*.jpg')]
 
-    init_imgs = list(imfp.glob('devin/ig/*.png'))
+    init_imgs = list(imfp.glob('devin/ig2/*.png'))
     
     all_params = list()
     for ii, ips, txts in product(init_imgs, img_prompts, texts):
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     # start the outer loop
     for params in tqdm.tqdm(all_params):
         gifmaker.make_gif(
-            'ig01', 
+            'ig05', 
             pathlib.Path(f'output/instagram'), 
             params,
             display_freq = None

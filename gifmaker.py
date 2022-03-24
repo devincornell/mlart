@@ -186,7 +186,12 @@ def make_gif(
         trainer.save_current_image(tmp_folder.joinpath(f'{fname_base}_iter{i:05d}.png'))
     
     # save a gif image
-    images = [imageio.imread(fn) for fn in sorted(map(str, tmp_folder.glob('*.png')))]
+    tmpfiles = tmp_folder.glob('*.png')
+    images = [imageio.imread(fn) for fn in sorted(map(str, tmpfiles))]
     imageio.mimsave(final_folder.joinpath(f'{fname_base}_final.gif'), images, duration=0.2)
+
+    # remove text files used for the gif
+    for fpath in tmpfiles:
+        fpath.unlink()
 
 
